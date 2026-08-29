@@ -1,0 +1,39 @@
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from .models import AppVersion
+
+
+def _version_tuple(v):
+    try:
+        return tuple(int(x) for x in v.split("."))
+    except (ValueError, AttributeError):
+        return (0,)
+
+
+class AppVersionView(APIView):
+    """
+    Majburiy yangilash tekshiruvi.
+    So'rov: /api/core/app-version/?platform=android&current=1.0.0
+    Javob: force_update=true bo'lsa ilova to'siq ekran ko'rsatadi.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        platform = request.query_params.get("platform", "android")
+        current = request.query_params.get("current", "0.0.0")
+        try:
+            av = AppVersion.objects.get(platform=platform)
+        except AppVersion.DoesNotExist:
+            return Response({"force_update": False, "update_available": False})
+
+        force = _version_tuple(current) < _version_tuple(av.min_version)
+        available = _version_tuple(current) < _version_tuple(av.latest_version)
+        return Response({
+            "latest_version": av.latest_version,
+            "min_version": av.min_version,
+            "force_update": force,
+            "update_available": available,
+            "store_url": av.store_url,
+            "release_notes": av.release_notes,
+        })
