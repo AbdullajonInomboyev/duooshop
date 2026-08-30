@@ -19,6 +19,7 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
     """Brendlar. ?category=<id> bilan filtrlanadi."""
     serializer_class = BrandListSerializer
     permission_classes = [AllowAny]
+    pagination_class = None  # brendlar kam, hammasi bir marta keladi
     filter_backends = [filters.SearchFilter]
     search_fields = ["name"]
 
