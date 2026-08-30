@@ -29,11 +29,18 @@ class AppVersionView(APIView):
 
         force = _version_tuple(current) < _version_tuple(av.min_version)
         available = _version_tuple(current) < _version_tuple(av.latest_version)
+
+        # APK fayl yuklangan bo'lsa, uning to'liq manzili (store_url'dan ustun)
+        apk_url = ""
+        if av.apk_file:
+            apk_url = request.build_absolute_uri(av.apk_file.url)
+
         return Response({
             "latest_version": av.latest_version,
             "min_version": av.min_version,
             "force_update": force,
             "update_available": available,
             "store_url": av.store_url,
+            "apk_url": apk_url,
             "release_notes": av.release_notes,
         })

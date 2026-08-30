@@ -25,6 +25,11 @@ class AppVersion(models.Model):
         help_text=_("Bundan past versiyalar majburiy yangilanadi."),
     )
     store_url = models.URLField(_("Do'kon havolasi (Play/App Store)"), blank=True)
+    apk_file = models.FileField(
+        _("APK fayl (Android)"), upload_to="apk/", blank=True, null=True,
+        help_text=_("Android APK faylini shu yerga yuklang. "
+                    "Foydalanuvchi 'Yangilash' bosganda shundan yuklab oladi."),
+    )
     release_notes = models.TextField(_("Yangiliklar"), blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
