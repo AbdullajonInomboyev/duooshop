@@ -127,11 +127,11 @@ CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL", default=True, cast=bool)
 # JAZZMIN — admin panel ko'rinishi (boshqaruv paneli)
 # ============================================================
 JAZZMIN_SETTINGS = {
-    "site_title": "GoDostavka",
-    "site_header": "GoDostavka",
-    "site_brand": "GoDostavka",
-    "welcome_sign": "GoDostavka boshqaruv paneliga xush kelibsiz",
-    "copyright": "GoDostavka",
+    "site_title": "DUOO",
+    "site_header": "DUOO",
+    "site_brand": "DUOO",
+    "welcome_sign": "DUOO boshqaruv paneliga xush kelibsiz",
+    "copyright": "DUOO",
     "search_model": ["orders.Order", "accounts.Shop"],
 
     # Yuqori menyu
