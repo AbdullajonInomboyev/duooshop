@@ -21,6 +21,7 @@ from catalog.views import CategoryViewSet, BrandViewSet, ProductViewSet
 from orders.views import CartView, OrderViewSet
 from promotions.views import BannerViewSet, PromoScreenViewSet
 from core.views import AppVersionView
+from orders.wagon_views import waybill_single, waybill_grouped
 
 router = DefaultRouter()
 router.register("regions", RegionViewSet, basename="region")
@@ -33,6 +34,10 @@ router.register("banners", BannerViewSet, basename="banner")
 router.register("promo-screens", PromoScreenViewSet, basename="promo")
 
 urlpatterns = [
+    # Yuk xati (накладная) — admin.site.urls dan OLDIN turishi shart
+    path("admin/waybill/order/<int:order_id>/", waybill_single, name="waybill-single"),
+    path("admin/waybill/grouped/", waybill_grouped, name="waybill-grouped"),
+
     path("admin/", admin.site.urls),
 
     # Autentifikatsiya (telefon + parol -> JWT token)

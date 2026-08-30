@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>Yuk xati № {{ order.receipt_number }}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; color: #000; margin: 24px; font-size: 14px; }
+  .head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .head-left div, .head-right div { margin-bottom: 6px; }
+  .line { border-bottom: 1px solid #000; min-width: 220px; display: inline-block; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { border: 1px solid #000; padding: 6px 8px; }
+  th { background: #f0f0f0; text-align: center; }
+  td.num, td.qty { text-align: center; }
+  td.price, td.total { text-align: right; }
+  .jami td { font-weight: bold; background: #fff44f; }
+  .cat { font-weight: bold; }
+  .print-btn { margin-bottom: 16px; padding: 10px 20px; background: #009D4D;
+    color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
+  @media print { .print-btn { display: none; } body { margin: 0; } }
+</style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨 Chop etish</button>
+
+  <div class="head">
+    <div class="head-left">
+      <div>Korxona nomi: <span class="line">{{ shop.name }}</span></div>
+      <div>Adres: <span class="line">{{ shop.district.name }}{% if shop.address_text %}, {{ shop.address_text }}{% endif %}</span></div>
+      <div>Telefoni: <span class="line">{{ shop.owner.phone }}</span></div>
+      <div>Sana: <span class="line">{{ date|date:"d.m.Y H:i" }}</span></div>
+    </div>
+    <div class="head-right">
+      <div><b>YUK XATI №</b> <span class="line">{{ order.receipt_number }}</span></div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px">№</th>
+        <th>Kategoriya</th>
+        <th>Mahsulot nomi</th>
+        <th style="width:100px">Narxi</th>
+        <th style="width:80px">Miqdori</th>
+        <th style="width:120px">Summasi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="num">{{ r.n }}</td>
+        <td class="cat">{{ r.category }}</td>
+        <td>{{ r.name }}</td>
+        <td class="price">{{ r.price|floatformat:0 }}</td>
+        <td class="qty">{{ r.qty }}</td>
+        <td class="total">{{ r.total|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="jami">
+        <td colspan="5" style="text-align:right">JAMI</td>
+        <td class="total">{{ grand_total|floatformat:0 }}</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

@@ -15,7 +15,13 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("receipt_number", "shop", "status_badge", "payment_type",
-                    "total_display", "courier", "created_at")
+                    "total_display", "courier", "created_at", "waybill_link")
+
+    @admin.display(description="Yuk xati")
+    def waybill_link(self, obj):
+        return format_html(
+            '<a href="/admin/waybill/order/{}/" target="_blank" '
+            'style="color:#009D4D;font-weight:600">📄 Yuk xati</a>', obj.id)
     list_filter = ("status", "payment_type", "created_at", "shop__region")
     search_fields = ("receipt_number", "shop__name", "shop__owner__phone")
     readonly_fields = ("receipt_number", "items_total", "total",

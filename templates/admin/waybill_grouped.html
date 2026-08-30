@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<title>Jamlangan yuk xati — {{ day|date:"d.m.Y" }}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; color: #000; margin: 24px; font-size: 14px; }
+  h2 { margin: 24px 0 8px; }
+  .meta { color: #333; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  th, td { border: 1px solid #000; padding: 6px 8px; }
+  th { background: #f0f0f0; text-align: center; }
+  td.num, td.qty { text-align: center; }
+  .cat { font-weight: bold; }
+  .shop-title { background: #009D4D; color: #fff; padding: 8px 12px;
+    margin-top: 20px; font-weight: bold; border-radius: 4px; }
+  .date-form { margin-bottom: 16px; }
+  .date-form input { padding: 6px; }
+  .date-form button { padding: 6px 16px; background: #009D4D; color: #fff;
+    border: none; border-radius: 6px; cursor: pointer; }
+  .print-btn { margin-bottom: 16px; padding: 10px 20px; background: #009D4D;
+    color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
+  @media print { .print-btn, .date-form { display: none; } body { margin: 0; } }
+</style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨 Chop etish</button>
+
+  <form class="date-form" method="get">
+    <label>Sana: <input type="date" name="date" value="{{ day|date:'Y-m-d' }}"></label>
+    <button type="submit">Ko'rish</button>
+  </form>
+
+  <h1>Jamlangan yuk xati</h1>
+  <div class="meta">
+    Sana: <b>{{ day|date:"d.m.Y" }}</b> |
+    Buyurtmalar: <b>{{ order_count }}</b> |
+    Do'konlar: <b>{{ shop_count }}</b>
+  </div>
+
+  {% if summary %}
+  <h2>Umumiy miqdor</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px">№</th>
+        <th>Kategoriya</th>
+        <th>Mahsulot nomi</th>
+        <th style="width:120px">Umumiy miqdor</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in summary %}
+      <tr>
+        <td class="num">{{ r.n }}</td>
+        <td class="cat">{{ r.category }}</td>
+        <td>{{ r.name }}</td>
+        <td class="qty">{{ r.qty }} {{ r.unit }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Do'konlar taqsimoti</h2>
+  {% for shop_name, items in by_shop.items %}
+    <div class="shop-title">{{ shop_name }}</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Kategoriya</th>
+          <th>Mahsulot nomi</th>
+          <th style="width:120px">Miqdori</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td class="cat">{{ it.category }}</td>
+          <td>{{ it.name }}</td>
+          <td class="qty">{{ it.qty }} {{ it.unit }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+  {% else %}
+  <p>Bu sanada buyurtmalar yo'q.</p>
+  {% endif %}
+</body>
+</html>

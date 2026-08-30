@@ -23,11 +23,11 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ["name"]
 
     def get_queryset(self):
-        qs = Brand.objects.filter(is_active=True).select_related("category")
+        qs = Brand.objects.filter(is_active=True).prefetch_related("categories")
         category = self.request.query_params.get("category")
         if category:
-            qs = qs.filter(category_id=category)
-        return qs
+            qs = qs.filter(categories__id=category)
+        return qs.distinct()
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):

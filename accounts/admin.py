@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Region, District, Shop
+from .admin_filters import RegionFilter, ChainedDistrictFilter
 
 
 @admin.register(Region)
@@ -37,7 +38,7 @@ class UserAdmin(BaseUserAdmin):
 class ShopAdmin(admin.ModelAdmin):
     list_display = ("name", "owner", "region", "district",
                     "debt_balance", "is_new", "is_active", "created_at")
-    list_filter = ("region", "district", "is_new", "is_active")
+    list_filter = (RegionFilter, ChainedDistrictFilter, "is_new", "is_active")
     search_fields = ("name", "owner__phone", "owner__full_name")
     readonly_fields = ("created_at",)
     list_editable = ("is_new",)

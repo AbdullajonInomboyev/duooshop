@@ -1,19 +1,25 @@
 """
 catalog — mahsulotlar katalogi: Kategoriya -> Brend -> Mahsulot.
 
-Muhim tamoyil (respublika miqyosi uchun):
-- Baza YENGIL bo'ladi: bu yerda faqat matn va rasm MANZILLARI turadi.
-- Rasmning o'zi ImageField orqali alohida omborda (media/CDN) saqlanadi.
-- Ro'yxatda thumbnail (yengil), tafsilotda to'liq rasm ishlatiladi (lazy loading).
-- Tez qidiriladigan maydonlarga (brend, kategoriya, nom) indeks qo'yilgan.
+Struktura:
+- Kategoriya asosiy (Pechenye, Shokolad, Suv...).
+- Brend bir yoki bir nechta kategoriyaga tegishli (ManyToMany).
+  Masalan HydroLife faqat "Suv"da; Navroz ham "Pechenye" ham "Shokolad"da.
+- Mahsulot: kategoriya + brend belgilanadi. Mahsulotning kategoriyasi
+  brendning kategoriyalaridan biri bo'lishi shart (validatsiya).
+  Shunda brend 2 kategoriyada bo'lsa ham, har kategoriyada FAQAT
+  o'sha kategoriyaga tegishli mahsuloti ko'rinadi.
+
+Masshtab uchun: baza yengil (matn + rasm manzillari), indekslar, thumbnail.
 """
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
 
 
 class Category(models.Model):
-    """Bo'lim: masalan Ichimliklar, Shokolad, Kolbasa, Qurilish mollari."""
+    """Bo'lim: masalan Pechenye, Shokolad, Suv, Kolbasa."""
     name = models.CharField(_("Kategoriya nomi"), max_length=120, unique=True)
     slug = models.SlugField(_("Slug"), max_length=140, unique=True, blank=True)
     icon = models.ImageField(
@@ -38,15 +44,14 @@ class Category(models.Model):
 
 class Brand(models.Model):
     """
-    Brend: masalan Navroz, Coca-Cola, Makfa.
-    Brend bir yoki bir nechta kategoriyaga tegishli bo'lishi mumkin,
-    lekin soddalik uchun asosiy kategoriyaga bog'laymiz.
+    Brend: masalan Navroz, Coca-Cola, HydroLife.
+    Bir yoki bir nechta kategoriyaga tegishli (ManyToMany).
     """
     name = models.CharField(_("Brend nomi"), max_length=150, unique=True)
     slug = models.SlugField(_("Slug"), max_length=170, unique=True, blank=True)
-    category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, related_name="brands",
-        verbose_name=_("Kategoriya"),
+    categories = models.ManyToManyField(
+        Category, related_name="brands", verbose_name=_("Kategoriyalar"),
+        help_text=_("Bu brend qaysi kategoriyalarga tegishli (bir yoki bir nechta)."),
     )
     logo = models.ImageField(
         _("Brend logotipi"), upload_to="brands/logos/", null=True, blank=True,
@@ -60,7 +65,6 @@ class Brand(models.Model):
         verbose_name = _("Brend")
         verbose_name_plural = _("Brendlar")
         ordering = ["order", "name"]
-        indexes = [models.Index(fields=["category", "is_active"])]
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -72,7 +76,6 @@ class Brand(models.Model):
 
 
 class Unit(models.TextChoices):
-    """O'lchov birligi — ulgurjida muhim."""
     DONA = "dona", _("dona")
     BLOK = "blok", _("blok")
     KARTON = "karton", _("karton")
@@ -83,8 +86,8 @@ class Unit(models.TextChoices):
 
 class Product(models.Model):
     """
-    Mahsulot. Baza yengil: rasm manzillari (thumbnail + full) va matn.
-    Narx va qoldiq shu yerda. Qoldiq 0 bo'lsa -> zakaz berib bo'lmaydi.
+    Mahsulot. Kategoriya + brend belgilanadi.
+    Mahsulot kategoriyasi brend kategoriyalaridan biri bo'lishi shart.
     """
     brand = models.ForeignKey(
         Brand, on_delete=models.CASCADE, related_name="products",
@@ -97,14 +100,13 @@ class Product(models.Model):
     name = models.CharField(_("Mahsulot nomi"), max_length=250)
     description = models.TextField(_("Tavsif"), blank=True)
 
-    # Ikki xil rasm: ro'yxat uchun yengil thumbnail, tafsilot uchun to'liq.
     image = models.ImageField(
         _("To'liq rasm"), upload_to="products/full/", null=True, blank=True,
     )
     thumbnail = models.ImageField(
         _("Kichik rasm (thumbnail)"), upload_to="products/thumbs/",
         null=True, blank=True,
-        help_text=_("Ro'yxatda ishlatiladi. Yuklashda avtomatik yaratiladi."),
+        help_text=_("Ro'yxatda ishlatiladi."),
     )
 
     price = models.DecimalField(_("Narxi"), max_digits=12, decimal_places=2)
@@ -112,19 +114,13 @@ class Product(models.Model):
         _("O'lchov birligi"), max_length=10, choices=Unit.choices,
         default=Unit.DONA,
     )
-    # Blok/karton ichida nechta dona borligi (ixtiyoriy, hisob uchun).
-    items_per_pack = models.PositiveIntegerField(
-        _("Qadoqdagi dona soni"), default=1,
-    )
-
+    items_per_pack = models.PositiveIntegerField(_("Qadoqdagi dona soni"), default=1)
     stock = models.IntegerField(_("Ombordagi qoldiq"), default=0)
     min_order_qty = models.PositiveIntegerField(_("Minimal zakaz miqdori"), default=1)
 
     is_new = models.BooleanField(_("Yangi"), default=False)
     is_promo = models.BooleanField(_("Aksiya"), default=False)
-    rating = models.DecimalField(
-        _("Reyting"), max_digits=2, decimal_places=1, default=0,
-    )
+    rating = models.DecimalField(_("Reyting"), max_digits=2, decimal_places=1, default=0)
 
     is_active = models.BooleanField(_("Faol"), default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -137,8 +133,18 @@ class Product(models.Model):
         indexes = [
             models.Index(fields=["brand", "is_active"]),
             models.Index(fields=["category", "is_active"]),
+            models.Index(fields=["brand", "category", "is_active"]),
             models.Index(fields=["name"]),
         ]
+
+    def clean(self):
+        # Mahsulot kategoriyasi brend kategoriyalaridan biri bo'lishi shart.
+        if self.brand_id and self.category_id:
+            if not self.brand.categories.filter(pk=self.category_id).exists():
+                raise ValidationError({
+                    "category": _("Bu kategoriya tanlangan brendga tegishli emas. "
+                                  "Avval brendga ushbu kategoriyani qo'shing.")
+                })
 
     @property
     def in_stock(self):

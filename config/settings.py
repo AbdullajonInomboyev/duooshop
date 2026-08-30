@@ -139,6 +139,7 @@ JAZZMIN_SETTINGS = {
         {"name": "Boshqaruv paneli", "url": "admin:index"},
         {"name": "Buyurtmalar", "model": "orders.order"},
         {"name": "Do'konlar", "model": "accounts.shop"},
+        {"name": "Jamlangan yuk xati", "url": "/admin/waybill/grouped/"},
     ],
 
     # Chap menyu tartibi va ikonlari
