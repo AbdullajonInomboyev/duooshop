@@ -25,6 +25,7 @@ class CartView(APIView):
 
     def post(self, request):
         """{product, quantity} — qo'shadi yoki miqdorni yangilaydi."""
+        from catalog.models import Product
         shop = get_shop_or_403(request)
         cart, _ = Cart.objects.get_or_create(shop=shop)
         product_id = request.data.get("product")
@@ -32,6 +33,14 @@ class CartView(APIView):
         if quantity <= 0:
             CartItem.objects.filter(cart=cart, product_id=product_id).delete()
         else:
+            # Stock tekshiruvi: 0 bo'lsa "Qolmagan"
+            product = Product.objects.filter(pk=product_id).first()
+            if product is None:
+                return Response({"detail": "Mahsulot topilmadi."},
+                                status=status.HTTP_404_NOT_FOUND)
+            if product.stock <= 0:
+                return Response({"detail": "Mahsulot qolmagan."},
+                                status=status.HTTP_400_BAD_REQUEST)
             CartItem.objects.update_or_create(
                 cart=cart, product_id=product_id,
                 defaults={"quantity": quantity},
