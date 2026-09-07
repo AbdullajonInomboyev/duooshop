@@ -44,3 +44,16 @@ class AppVersionView(APIView):
             "apk_url": apk_url,
             "release_notes": av.release_notes,
         })
+
+
+class SiteConfigView(APIView):
+    """Umumiy sozlamalar — admin telefon raqami (do'kon egasi uchun)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from .models import SiteConfig
+        cfg = SiteConfig.get()
+        return Response({
+            "admin_phone": cfg.admin_phone,
+            "admin_name": cfg.admin_name,
+        })

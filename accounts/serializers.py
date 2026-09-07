@@ -22,8 +22,9 @@ class ShopSerializer(serializers.ModelSerializer):
         model = Shop
         fields = ["id", "name", "image", "region", "district",
                   "latitude", "longitude", "address_text",
-                  "debt_balance", "credit_limit", "is_active"]
-        read_only_fields = ["debt_balance", "credit_limit", "is_active"]
+                  "debt_balance", "credit_limit", "is_active", "is_approved"]
+        read_only_fields = ["debt_balance", "credit_limit", "is_active",
+                            "is_approved"]
 
 
 class RegisterSerializer(serializers.Serializer):

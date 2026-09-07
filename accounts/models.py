@@ -121,6 +121,10 @@ class Shop(models.Model):
     )
 
     is_active = models.BooleanField(_("Faol"), default=True)
+    is_approved = models.BooleanField(
+        _("Tasdiqlangan"), default=False,
+        help_text=_("Admin tasdiqlagach do'kon buyurtma bera oladi."),
+    )
     is_new = models.BooleanField(
         _("Yangi"), default=True,
         help_text=_("Admin/dastavkachi hali ko'rmagan yangi do'kon."),

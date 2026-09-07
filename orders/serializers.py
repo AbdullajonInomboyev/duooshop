@@ -69,6 +69,16 @@ class CreateOrderSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         shop = self.context["shop"]
+        # Do'kon tasdiqlanmagan bo'lsa — buyurtma berolmaydi.
+        # Admin telefon raqamini xabarda qaytaramiz.
+        if not shop.is_approved:
+            from core.models import SiteConfig
+            cfg = SiteConfig.get()
+            phone = cfg.admin_phone or "administrator"
+            raise serializers.ValidationError(
+                f"Hisobingiz hali tasdiqlanmagan. Buyurtma berish uchun "
+                f"administrator bilan bog'laning: {phone}"
+            )
         cart = getattr(shop, "cart", None)
         if not cart or not cart.items.exists():
             raise serializers.ValidationError("Savat bo'sh.")

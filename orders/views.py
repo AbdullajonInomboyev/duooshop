@@ -78,3 +78,47 @@ class OrderViewSet(mixins.ListModelMixin,
             OrderDetailSerializer(order, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
+
+    @action(detail=True, methods=["post"], url_path="update-item")
+    def update_item(self, request, pk=None):
+        """
+        Buyurtma mahsulotini tahrirlash yoki o'chirish.
+        {item_id, quantity} — quantity=0 bo'lsa o'chiriladi.
+        Faqat 'new' yoki 'confirmed' holatidagi buyurtmalar
+        tahrirlanadi (yetkazilgan/to'langan emas). Yangi mahsulot
+        qo'shib bo'lmaydi — faqat mavjudlarini o'zgartirish/o'chirish.
+        """
+        order = self.get_object()
+        if order.status not in ("new", "confirmed"):
+            return Response(
+                {"detail": "Bu buyurtmani endi tahrirlab bo'lmaydi."},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        item_id = request.data.get("item_id")
+        quantity = int(request.data.get("quantity", 0))
+        item = order.items.filter(pk=item_id).first()
+        if item is None:
+            return Response({"detail": "Mahsulot topilmadi."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        if quantity <= 0:
+            item.delete()
+        else:
+            item.quantity = quantity
+            item.line_total = item.unit_price * quantity
+            item.save(update_fields=["quantity", "line_total"])
+
+        # Jami summani qayta hisoblaymiz
+        from django.db.models import Sum
+        total = order.items.aggregate(s=Sum("line_total"))["s"] or 0
+        order.items_total = total
+        order.total = total
+        order.save(update_fields=["items_total", "total"])
+
+        # Agar hamma mahsulot o'chirilsa, buyurtmani bekor qilamiz
+        if not order.items.exists():
+            order.status = "cancelled"
+            order.save(update_fields=["status"])
+
+        return Response(
+            OrderDetailSerializer(order, context={"request": request}).data)

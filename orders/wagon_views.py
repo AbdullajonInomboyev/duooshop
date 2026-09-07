@@ -107,3 +107,35 @@ def waybill_grouped(request):
         "shop_count": len(by_shop),
     }
     return render(request, "admin/waybill_grouped.html", context)
+
+
+@staff_member_required
+def waybill_multiple(request):
+    """
+    Bir nechta buyurtma uchun yuk xati — bitta sahifada, har biri
+    '- - - -' bilan ajratilgan. Chop etish/PDF uchun.
+    ?ids=1,2,3 (buyurtma ID'lari).
+    """
+    ids_str = request.GET.get("ids", "")
+    ids = [int(x) for x in ids_str.split(",") if x.strip().isdigit()]
+    orders = (Order.objects.filter(pk__in=ids)
+              .select_related("shop").order_by("shop__name"))
+
+    waybills = []
+    for order in orders:
+        items = order.items.select_related("product", "product__category").all()
+        rows = []
+        for i, it in enumerate(items, 1):
+            category = ""
+            if it.product and it.product.category:
+                category = it.product.category.name
+            rows.append({
+                "n": i, "category": category, "name": it.product_name,
+                "price": it.unit_price, "qty": it.quantity, "total": it.line_total,
+            })
+        waybills.append({
+            "order": order, "shop": order.shop, "rows": rows,
+            "grand_total": order.total, "date": order.created_at,
+        })
+
+    return render(request, "admin/waybill_multiple.html", {"waybills": waybills})

@@ -39,3 +39,34 @@ class AppVersion(models.Model):
 
     def __str__(self):
         return f"{self.get_platform_display()} — {self.latest_version}"
+
+
+class SiteConfig(models.Model):
+    """
+    Umumiy sozlamalar (bitta yozuv). Masalan admin telefon raqami —
+    do'kon egasi tasdiqlash uchun bog'lanadi.
+    """
+    admin_phone = models.CharField(
+        _("Admin telefon raqami"), max_length=20, blank=True,
+        help_text=_("Tasdiqlash uchun do'kon egasi shu raqamga bog'lanadi."),
+    )
+    admin_name = models.CharField(
+        _("Admin ismi"), max_length=100, blank=True,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Sozlama")
+        verbose_name_plural = _("Sozlamalar")
+
+    def __str__(self):
+        return "Umumiy sozlamalar"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # har doim bitta yozuv (singleton)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
