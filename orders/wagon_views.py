@@ -14,29 +14,39 @@ from .models import Order, OrderItem
 
 @staff_member_required
 def waybill_single(request, order_id):
-    """Bitta buyurtma uchun yuk xati."""
+    """Bitta buyurtma uchun yuk xati. Brend ustuni bilan, bir xil mahsulot
+    (nom+brend bir xil) guruhlanadi — miqdorlar qo'shiladi."""
     order = get_object_or_404(Order.objects.select_related("shop"), pk=order_id)
-    items = order.items.select_related("product", "product__category").all()
+    items = order.items.select_related("product", "product__category",
+                                       "product__brand").all()
+
+    # Guruhlash: (nom, brend) bo'yicha — takrorlanса birlashadi
+    grouped = {}
+    for it in items:
+        category = it.product.category.name if it.product and it.product.category else ""
+        brand = it.product.brand.name if it.product and it.product.brand else ""
+        key = (it.product_name, brand)
+        if key in grouped:
+            grouped[key]["qty"] += it.quantity
+            grouped[key]["total"] += it.line_total
+        else:
+            grouped[key] = {
+                "category": category, "brand": brand, "name": it.product_name,
+                "price": it.unit_price, "qty": it.quantity, "total": it.line_total,
+            }
 
     rows = []
-    for i, it in enumerate(items, 1):
-        category = ""
-        if it.product and it.product.category:
-            category = it.product.category.name
-        rows.append({
-            "n": i,
-            "category": category,
-            "name": it.product_name,
-            "price": it.unit_price,
-            "qty": it.quantity,
-            "total": it.line_total,
-        })
+    grand_total = 0
+    for i, data in enumerate(
+            sorted(grouped.values(), key=lambda x: (x["category"], x["brand"], x["name"])), 1):
+        rows.append({"n": i, **data})
+        grand_total += data["total"]
 
     context = {
         "order": order,
         "shop": order.shop,
         "rows": rows,
-        "grand_total": order.total,
+        "grand_total": grand_total,
         "date": order.created_at,
     }
     return render(request, "admin/waybill_single.html", context)
@@ -63,8 +73,8 @@ def waybill_grouped(request):
               .exclude(status="cancelled")
               .select_related("shop"))
 
-    # Qism 1: umumiy miqdor (mahsulot nomi bo'yicha jamlash)
-    totals = defaultdict(lambda: {"qty": 0, "category": "", "unit": ""})
+    # Qism 1: umumiy miqdor ((nom, brend) bo'yicha jamlash — guruhlash)
+    totals = defaultdict(lambda: {"qty": 0, "category": "", "brand": "", "unit": ""})
     # Qism 2: do'kon taqsimoti
     by_shop = OrderedDict()
 
@@ -72,28 +82,34 @@ def waybill_grouped(request):
         shop_name = order.shop.name
         if shop_name not in by_shop:
             by_shop[shop_name] = []
-        for it in order.items.select_related("product", "product__category"):
+        for it in order.items.select_related("product", "product__category",
+                                             "product__brand"):
             cat = (it.product.category.name
                    if it.product and it.product.category else "")
-            key = it.product_name
+            brand = (it.product.brand.name
+                     if it.product and it.product.brand else "")
+            key = (it.product_name, brand)
             totals[key]["qty"] += it.quantity
             totals[key]["category"] = cat
+            totals[key]["brand"] = brand
             totals[key]["unit"] = it.unit
             by_shop[shop_name].append({
                 "category": cat,
+                "brand": brand,
                 "name": it.product_name,
                 "qty": it.quantity,
                 "unit": it.unit,
                 "total": it.line_total,
             })
 
-    # Umumiy miqdorni tartiblash (kategoriya, keyin nom bo'yicha)
+    # Umumiy miqdorni tartiblash (kategoriya, brend, keyin nom bo'yicha)
     summary = []
-    for i, (name, data) in enumerate(
-            sorted(totals.items(), key=lambda x: (x[1]["category"], x[0])), 1):
+    for i, ((name, brand), data) in enumerate(
+            sorted(totals.items(), key=lambda x: (x[1]["category"], x[1]["brand"], x[0][0])), 1):
         summary.append({
             "n": i,
             "category": data["category"],
+            "brand": data["brand"],
             "name": name,
             "qty": data["qty"],
             "unit": data["unit"],
@@ -123,19 +139,89 @@ def waybill_multiple(request):
 
     waybills = []
     for order in orders:
-        items = order.items.select_related("product", "product__category").all()
+        items = order.items.select_related(
+            "product", "product__category", "product__brand").all()
+        # Guruhlash: (nom, brend) bo'yicha
+        grouped = {}
+        for it in items:
+            category = it.product.category.name if it.product and it.product.category else ""
+            brand = it.product.brand.name if it.product and it.product.brand else ""
+            key = (it.product_name, brand)
+            if key in grouped:
+                grouped[key]["qty"] += it.quantity
+                grouped[key]["total"] += it.line_total
+            else:
+                grouped[key] = {
+                    "category": category, "brand": brand, "name": it.product_name,
+                    "price": it.unit_price, "qty": it.quantity, "total": it.line_total,
+                }
         rows = []
-        for i, it in enumerate(items, 1):
-            category = ""
-            if it.product and it.product.category:
-                category = it.product.category.name
-            rows.append({
-                "n": i, "category": category, "name": it.product_name,
-                "price": it.unit_price, "qty": it.quantity, "total": it.line_total,
-            })
+        grand_total = 0
+        for i, data in enumerate(
+                sorted(grouped.values(), key=lambda x: (x["category"], x["brand"], x["name"])), 1):
+            rows.append({"n": i, **data})
+            grand_total += data["total"]
         waybills.append({
             "order": order, "shop": order.shop, "rows": rows,
-            "grand_total": order.total, "date": order.created_at,
+            "grand_total": grand_total, "date": order.created_at,
         })
 
     return render(request, "admin/waybill_multiple.html", {"waybills": waybills})
+
+@staff_member_required
+def waybill_by_brand(request):
+    """
+    Brend bo'yicha jamlangan yuk xati — bir ishlab chiqaruvchiga buyurtma
+    berish uchun. Sana + brend tanlanadi, o'sha brendning o'sha kundagi
+    hamma buyurtmalardagi mahsulotlari jamlanadi (qaysi mahsulotdan jami
+    qancha kerak).
+    ?date=YYYY-MM-DD&brand=<id>
+    """
+    from collections import defaultdict
+    from catalog.models import Brand
+    from .models import OrderItem
+
+    date_str = request.GET.get("date")
+    if date_str:
+        try:
+            day = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            day = timezone.now().date()
+    else:
+        day = timezone.now().date()
+
+    brand_id = request.GET.get("brand")
+    brands = Brand.objects.filter(is_active=True).order_by("name")
+    selected_brand = None
+    summary = []
+
+    if brand_id:
+        selected_brand = Brand.objects.filter(pk=brand_id).first()
+        # O'sha kundagi, bekor qilinmagan buyurtmalardagi shu brend mahsulotlari
+        items = (OrderItem.objects
+                 .filter(order__created_at__date=day,
+                         product__brand_id=brand_id)
+                 .exclude(order__status="cancelled")
+                 .select_related("product", "product__category"))
+        totals = defaultdict(lambda: {"qty": 0, "category": "", "unit": ""})
+        for it in items:
+            cat = (it.product.category.name
+                   if it.product and it.product.category else "")
+            key = it.product_name
+            totals[key]["qty"] += it.quantity
+            totals[key]["category"] = cat
+            totals[key]["unit"] = it.unit
+        for i, (name, data) in enumerate(
+                sorted(totals.items(), key=lambda x: (x[1]["category"], x[0])), 1):
+            summary.append({
+                "n": i, "category": data["category"], "name": name,
+                "qty": data["qty"], "unit": data["unit"],
+            })
+
+    context = {
+        "day": day,
+        "brands": brands,
+        "selected_brand": selected_brand,
+        "summary": summary,
+    }
+    return render(request, "admin/waybill_by_brand.html", context)

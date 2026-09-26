@@ -70,3 +70,27 @@ class SiteConfig(models.Model):
     def get(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+class Feedback(models.Model):
+    """
+    Do'kon egasidan kelgan fikr/taklif. Ilovadan yuboriladi.
+    Admin panelda o'qiladi — ilovani yaxshilash va qaysi mahsulotga
+    ehtiyoj borligini bilish uchun.
+    """
+    shop = models.ForeignKey(
+        "accounts.Shop", on_delete=models.CASCADE, related_name="feedbacks",
+        verbose_name=_("Do'kon"), null=True, blank=True,
+    )
+    shop_name = models.CharField(_("Do'kon nomi"), max_length=200, blank=True)
+    phone = models.CharField(_("Telefon"), max_length=20, blank=True)
+    message = models.TextField(_("Fikr / taklif"))
+    is_read = models.BooleanField(_("O'qilgan"), default=False)
+    created_at = models.DateTimeField(_("Sana"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Fikr va taklif")
+        verbose_name_plural = _("Fikr va takliflar")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.shop_name or 'Nomalum'} — {self.created_at:%d.%m.%Y}"

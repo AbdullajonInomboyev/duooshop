@@ -54,9 +54,9 @@ class ProductAdminForm(forms.ModelForm):
 class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
     list_display = ("name", "brand", "category", "price", "unit",
-                    "stock", "is_new", "is_promo", "is_active")
+                    "is_new", "is_promo", "is_active")
     list_filter = ("category", "brand", "is_new", "is_promo", "is_active")
-    list_editable = ("price", "stock", "is_active")
+    list_editable = ("price", "is_active")
     search_fields = ("name", "brand__name")
     readonly_fields = ("created_at", "updated_at")
     autocomplete_fields = ("brand",)

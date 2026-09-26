@@ -7,3 +7,4 @@ staticfiles/
 venv/
 *.log
 .DS_Store
+.qodo/

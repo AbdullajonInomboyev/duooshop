@@ -57,3 +57,23 @@ class SiteConfigView(APIView):
             "admin_phone": cfg.admin_phone,
             "admin_name": cfg.admin_name,
         })
+
+class FeedbackView(APIView):
+    """Do'kon egasidan fikr/taklif qabul qiladi (ilovadan yuboriladi)."""
+    from rest_framework.permissions import IsAuthenticated
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from .models import Feedback
+        from accounts.models import Shop
+        message = (request.data.get("message") or "").strip()
+        if not message:
+            return Response({"detail": "Fikr matni bo'sh."}, status=400)
+        shop = Shop.objects.filter(owner=request.user).first()
+        Feedback.objects.create(
+            shop=shop,
+            shop_name=shop.name if shop else "",
+            phone=request.user.phone,
+            message=message,
+        )
+        return Response({"detail": "Fikringiz uchun rahmat!"}, status=201)

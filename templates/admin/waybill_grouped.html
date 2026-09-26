@@ -46,6 +46,7 @@
       <tr>
         <th style="width:40px">№</th>
         <th>Kategoriya</th>
+        <th>Brend</th>
         <th>Mahsulot nomi</th>
         <th style="width:120px">Umumiy miqdor</th>
       </tr>
@@ -55,6 +56,7 @@
       <tr>
         <td class="num">{{ r.n }}</td>
         <td class="cat">{{ r.category }}</td>
+        <td>{{ r.brand }}</td>
         <td>{{ r.name }}</td>
         <td class="qty">{{ r.qty }} {{ r.unit }}</td>
       </tr>
@@ -69,6 +71,7 @@
       <thead>
         <tr>
           <th>Kategoriya</th>
+          <th>Brend</th>
           <th>Mahsulot nomi</th>
           <th style="width:120px">Miqdori</th>
         </tr>
@@ -77,6 +80,7 @@
         {% for it in items %}
         <tr>
           <td class="cat">{{ it.category }}</td>
+          <td>{{ it.brand }}</td>
           <td>{{ it.name }}</td>
           <td class="qty">{{ it.qty }} {{ it.unit }}</td>
         </tr>

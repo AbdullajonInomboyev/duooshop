@@ -41,6 +41,7 @@
       <tr>
         <th style="width:40px">№</th>
         <th>Kategoriya</th>
+        <th>Brend</th>
         <th>Mahsulot nomi</th>
         <th style="width:100px">Narxi</th>
         <th style="width:80px">Miqdori</th>
@@ -52,6 +53,7 @@
       <tr>
         <td class="num">{{ r.n }}</td>
         <td class="cat">{{ r.category }}</td>
+        <td>{{ r.brand }}</td>
         <td>{{ r.name }}</td>
         <td class="price">{{ r.price|floatformat:0 }}</td>
         <td class="qty">{{ r.qty }}</td>
@@ -59,7 +61,7 @@
       </tr>
       {% endfor %}
       <tr class="jami">
-        <td colspan="5" style="text-align:right">JAMI</td>
+        <td colspan="6" style="text-align:right">JAMI</td>
         <td class="total">{{ grand_total|floatformat:0 }}</td>
       </tr>
     </tbody>

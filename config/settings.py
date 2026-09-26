@@ -140,6 +140,7 @@ JAZZMIN_SETTINGS = {
         {"name": "Buyurtmalar", "model": "orders.order"},
         {"name": "Do'konlar", "model": "accounts.shop"},
         {"name": "Jamlangan yuk xati", "url": "/admin/waybill/grouped/"},
+        {"name": "Brend yuk xati", "url": "/admin/waybill/by-brand/"},
     ],
 
     # Chap menyu tartibi va ikonlari
@@ -159,6 +160,8 @@ JAZZMIN_SETTINGS = {
         "promotions.Banner": "fas fa-image",
         "promotions.PromoScreen": "fas fa-bullhorn",
         "core.AppVersion": "fas fa-mobile-alt",
+        "core.Feedback": "fas fa-comment-dots",
+        "core.SiteConfig": "fas fa-cog",
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",

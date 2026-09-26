@@ -106,8 +106,6 @@ class CreateOrderSerializer(serializers.Serializer):
                 unit_price=product.price, quantity=ci.quantity,
                 unit=product.unit, line_total=line,
             )
-            # Eslatma: stock avtomatik kamaymaydi — admin qo'lda boshqaradi.
-            # (stock=0 qilsa "+" yo'qoladi, aks holda cheklovsiz zakaz.)
             items_total += line
 
         order.items_total = items_total

@@ -115,7 +115,6 @@ class Product(models.Model):
         default=Unit.DONA,
     )
     items_per_pack = models.PositiveIntegerField(_("Qadoqdagi dona soni"), default=1)
-    stock = models.IntegerField(_("Ombordagi qoldiq"), default=0)
     min_order_qty = models.PositiveIntegerField(_("Minimal zakaz miqdori"), default=1)
 
     is_new = models.BooleanField(_("Yangi"), default=False)
@@ -129,7 +128,7 @@ class Product(models.Model):
     class Meta:
         verbose_name = _("Mahsulot")
         verbose_name_plural = _("Mahsulotlar")
-        ordering = ["-created_at"]
+        ordering = ["name"]  # alfavit tartibida (A->Z)
         indexes = [
             models.Index(fields=["brand", "is_active"]),
             models.Index(fields=["category", "is_active"]),
@@ -148,7 +147,8 @@ class Product(models.Model):
 
     @property
     def in_stock(self):
-        return self.stock > 0
+        # Ombor doim to'la — hamma mahsulot doimo mavjud
+        return True
 
     def __str__(self):
         return f"{self.name} ({self.brand.name})"
