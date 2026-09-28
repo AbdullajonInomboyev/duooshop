@@ -225,3 +225,55 @@ def waybill_by_brand(request):
         "summary": summary,
     }
     return render(request, "admin/waybill_by_brand.html", context)
+
+
+@staff_member_required
+def waybill_selected_by_brand(request):
+    """
+    Tanlangan buyurtmalardan BREND bo'yicha guruhlangan yuk xati.
+    Bir necha do'kon buyurtmasi tanlanadi -> mahsulotlar brendlarga
+    bo'linadi (har brend bir ombordan). Har brend alohida bo'lim,
+    qaysi mahsulotdan jami qancha kerakligi ko'rsatiladi.
+    ?ids=1,2,3
+    """
+    from collections import defaultdict, OrderedDict
+
+    ids_str = request.GET.get("ids", "")
+    ids = [int(x) for x in ids_str.split(",") if x.strip().isdigit()]
+    orders = (Order.objects.filter(pk__in=ids)
+              .exclude(status="cancelled").select_related("shop"))
+
+    # Brend -> {(nom): {qty, category, unit}}
+    by_brand = OrderedDict()
+    for order in orders:
+        for it in order.items.select_related(
+                "product", "product__category", "product__brand"):
+            brand = (it.product.brand.name
+                     if it.product and it.product.brand else "Boshqa")
+            cat = (it.product.category.name
+                   if it.product and it.product.category else "")
+            if brand not in by_brand:
+                by_brand[brand] = {}
+            key = it.product_name
+            if key in by_brand[brand]:
+                by_brand[brand][key]["qty"] += it.quantity
+            else:
+                by_brand[brand][key] = {
+                    "category": cat, "name": it.product_name,
+                    "qty": it.quantity, "unit": it.unit,
+                }
+
+    # Tartibli ro'yxatga aylantiramiz (brend nomi bo'yicha)
+    brands = []
+    for brand_name in sorted(by_brand.keys()):
+        rows = []
+        for i, data in enumerate(
+                sorted(by_brand[brand_name].values(),
+                       key=lambda x: (x["category"], x["name"])), 1):
+            rows.append({"n": i, **data})
+        brands.append({"brand": brand_name, "rows": rows})
+
+    return render(request, "admin/waybill_selected_by_brand.html", {
+        "brands": brands,
+        "order_count": orders.count(),
+    })

@@ -70,8 +70,15 @@ class OrderAdmin(admin.ModelAdmin):
         return format_html("<b>{:,.0f}</b> so'm".format(obj.total).replace(",", " "))
 
     # ---- Tugmali harakatlar ----
-    actions = ["print_waybills", "mark_confirmed", "mark_packed",
-               "mark_on_the_way", "mark_delivered", "mark_paid", "mark_cancelled"]
+    actions = ["print_waybills", "print_by_brand", "mark_confirmed",
+               "mark_packed", "mark_on_the_way", "mark_delivered",
+               "mark_paid", "mark_cancelled"]
+
+    @admin.action(description="🏭 Brend bo'yicha yuk xati (bir ombordan)")
+    def print_by_brand(self, request, queryset):
+        from django.shortcuts import redirect
+        ids = ",".join(str(o.id) for o in queryset)
+        return redirect(f"/admin/waybill/selected-by-brand/?ids={ids}")
 
     @admin.action(description="Tanlanganlarning yuk xati (bitta sahifada)")
     def print_waybills(self, request, queryset):

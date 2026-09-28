@@ -21,7 +21,7 @@ from catalog.views import CategoryViewSet, BrandViewSet, ProductViewSet
 from orders.views import CartView, OrderViewSet
 from promotions.views import BannerViewSet, PromoScreenViewSet
 from core.views import AppVersionView, SiteConfigView, FeedbackView
-from orders.wagon_views import waybill_single, waybill_grouped, waybill_multiple, waybill_by_brand
+from orders.wagon_views import waybill_single, waybill_grouped, waybill_multiple, waybill_by_brand, waybill_selected_by_brand
 
 router = DefaultRouter()
 router.register("regions", RegionViewSet, basename="region")
@@ -39,6 +39,7 @@ urlpatterns = [
     path("admin/waybill/grouped/", waybill_grouped, name="waybill-grouped"),
     path("admin/waybill/multiple/", waybill_multiple, name="waybill-multiple"),
     path("admin/waybill/by-brand/", waybill_by_brand, name="waybill-by-brand"),
+    path("admin/waybill/selected-by-brand/", waybill_selected_by_brand, name="waybill-selected-by-brand"),
 
     path("admin/", admin.site.urls),
 

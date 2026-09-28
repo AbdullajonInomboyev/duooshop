@@ -2,53 +2,41 @@
 <html lang="uz">
 <head>
 <meta charset="utf-8">
-<title>Brend bo'yicha yuk xati</title>
+<title>Brend bo'yicha yuk xati (tanlangan buyurtmalar)</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: Arial, sans-serif; color: #000; margin: 24px; font-size: 14px; }
-  h1 { margin: 12px 0; }
+  h1 { margin: 8px 0; }
   .meta { color: #333; margin-bottom: 16px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
   th, td { border: 1px solid #000; padding: 6px 8px; }
   th { background: #f0f0f0; text-align: center; }
   td.num, td.qty { text-align: center; }
   .cat { font-weight: bold; }
-  .form { margin-bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .form input, .form select { padding: 7px; border: 1px solid #ccc; border-radius: 6px; }
-  .form button { padding: 7px 16px; background: #009D4D; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-  .brand-title { background: #009D4D; color: #fff; padding: 10px 14px; border-radius: 6px; font-weight: bold; font-size: 16px; margin: 16px 0; }
-  .print-btn { margin-bottom: 16px; padding: 10px 20px; background: #009D4D; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
-  @media print { .print-btn, .form { display: none; } body { margin: 0; } }
+  .brand-title { background: #009D4D; color: #fff; padding: 10px 14px;
+    border-radius: 6px; font-weight: bold; font-size: 17px; margin: 18px 0 8px; }
+  .separator { text-align: center; margin: 20px 0; letter-spacing: 4px;
+    font-weight: bold; font-size: 15px; }
+  .print-btn { margin-bottom: 16px; padding: 10px 20px; background: #009D4D;
+    color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
+  @media print {
+    .print-btn { display: none; }
+    body { margin: 0; }
+    .brand-block { page-break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
   <button class="print-btn" onclick="window.print()">🖨 Chop etish / PDF</button>
 
   <h1>Brend bo'yicha yuk xati</h1>
-  <p class="meta">Bir ishlab chiqaruvchiga buyurtma berish uchun — tanlangan
-     brendning shu kundagi hamma buyurtmalardagi mahsulotlari jamlanadi.</p>
+  <p class="meta">Tanlangan {{ order_count }} ta buyurtma — mahsulotlar
+     brendlar (ishlab chiqaruvchilar) bo'yicha ajratildi. Har brendni
+     o'sha ombordan olib kelish uchun.</p>
 
-  <form class="form" method="get">
-    <label>Sana:
-      <input type="date" name="date" value="{{ day|date:'Y-m-d' }}">
-    </label>
-    <label>Brend:
-      <select name="brand">
-        <option value="">— Brendni tanlang —</option>
-        {% for b in brands %}
-        <option value="{{ b.id }}"
-          {% if selected_brand and selected_brand.id == b.id %}selected{% endif %}>
-          {{ b.name }}
-        </option>
-        {% endfor %}
-      </select>
-    </label>
-    <button type="submit">Ko'rish</button>
-  </form>
-
-  {% if selected_brand %}
-    <div class="brand-title">{{ selected_brand.name }} — {{ day|date:"d.m.Y" }}</div>
-    {% if summary %}
+  {% for b in brands %}
+  <div class="brand-block">
+    <div class="brand-title">🏭 {{ b.brand }}</div>
     <table>
       <thead>
         <tr>
@@ -59,7 +47,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for r in summary %}
+        {% for r in b.rows %}
         <tr>
           <td class="num">{{ r.n }}</td>
           <td class="cat">{{ r.category }}</td>
@@ -69,11 +57,12 @@
         {% endfor %}
       </tbody>
     </table>
-    {% else %}
-    <p>Bu sanada {{ selected_brand.name }} brendi bo'yicha buyurtma yo'q.</p>
-    {% endif %}
-  {% else %}
-    <p style="color:#888">Sana va brendni tanlang.</p>
+  </div>
+  {% if not forloop.last %}
+  <div class="separator">- - - - - - - - - - - - - - - - - - - -</div>
   {% endif %}
+  {% empty %}
+  <p>Buyurtma tanlanmagan yoki mahsulot yo'q.</p>
+  {% endfor %}
 </body>
 </html>
