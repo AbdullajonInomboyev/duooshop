@@ -3,6 +3,7 @@ GoDostavka URL konfiguratsiyasi.
 
 /admin/          -> Boshqaruv paneli (admin + sotuv bo'limi)
 /api/            -> Mobil ilova uchun REST API
+/api/docs/       -> Swagger API hujjatlari
 /media/          -> Yuklangan rasmlar (dev rejimida)
 """
 from django.contrib import admin
@@ -14,6 +15,13 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView, TokenRefreshView,
 )
 
+# Swagger kutubxonasi
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
+
 from accounts.views import (
     RegionViewSet, DistrictViewSet, RegisterView, MeView,
 )
@@ -21,8 +29,12 @@ from catalog.views import CategoryViewSet, BrandViewSet, ProductViewSet
 from orders.views import CartView, OrderViewSet
 from promotions.views import BannerViewSet, PromoScreenViewSet
 from core.views import AppVersionView, SiteConfigView, FeedbackView
-from orders.wagon_views import waybill_single, waybill_grouped, waybill_multiple, waybill_by_brand, waybill_selected_by_brand
+from orders.wagon_views import (
+    waybill_single, waybill_grouped, waybill_multiple, 
+    waybill_by_brand, waybill_selected_by_brand
+)
 
+# Router sozlamalari
 router = DefaultRouter()
 router.register("regions", RegionViewSet, basename="region")
 router.register("districts", DistrictViewSet, basename="district")
@@ -43,6 +55,11 @@ urlpatterns = [
 
     path("admin/", admin.site.urls),
 
+    # OpenAPI 3 / Swagger Hujjatlari (Qo'shildi)
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+
     # Autentifikatsiya (telefon + parol -> JWT token)
     path("api/auth/login/", TokenObtainPairView.as_view(), name="login"),
     path("api/auth/refresh/", TokenRefreshView.as_view(), name="refresh"),
@@ -52,12 +69,12 @@ urlpatterns = [
     # Savat (alohida, viewset emas)
     path("api/cart/", CartView.as_view(), name="cart"),
 
-    # Majburiy yangilash
+    # Ilova konfiguratsiyasi va versiyalash
     path("api/core/app-version/", AppVersionView.as_view(), name="app-version"),
     path("api/core/config/", SiteConfigView.as_view(), name="site-config"),
     path("api/core/feedback/", FeedbackView.as_view(), name="feedback"),
 
-    # Qolgan barcha resurslar
+    # Qolgan barcha resurslar (router endpointlari)
     path("api/", include(router.urls)),
 ]
 
