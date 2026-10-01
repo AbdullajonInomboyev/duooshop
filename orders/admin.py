@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Sum
+from rangefilter.filters import DateRangeFilter  # <--- Sana oralig'i filtri import qilindi
 from .models import Cart, CartItem, Order, OrderItem, Payment
 
 
@@ -35,10 +36,12 @@ class OrderAdmin(admin.ModelAdmin):
         "created_at",
         "waybill_actions",
     )
+    
+    # "created_at" o'rniga sana oralig'i filtri qo'yildi
     list_filter = (
+        ("created_at", DateRangeFilter),
         "status",
         "payment_type",
-        "created_at",
         "shop__region",
         "shop",
     )
@@ -75,7 +78,7 @@ class OrderAdmin(admin.ModelAdmin):
                 item.line_total = new_line_total
                 item.save(update_fields=["line_total"])
 
-        # Buyurtma umumiy summasini qayta hisoblash (modeldagi metod yoki to'g'ridan-to'g'ri)
+        # Buyurtma umumiy summasini qayta hisoblash
         if hasattr(order, "recalculate_totals"):
             order.recalculate_totals(save=True)
         else:
@@ -178,7 +181,6 @@ class OrderAdmin(admin.ModelAdmin):
         count = 0
         for order in queryset:
             if order.status != "paid":
-                # Nasiya bo'lsa do'kon qarzini kamaytiramiz va Payment yaratamiz
                 if order.payment_type == "credit" and order.shop:
                     shop = order.shop
                     if hasattr(shop, "debt_balance"):
@@ -212,7 +214,10 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ("shop", "amount_display", "order", "received_by", "created_at")
-    list_filter = ("created_at", "shop__region")
+    list_filter = (
+        ("created_at", DateRangeFilter),  # <--- To'lovlar ro'yxatiga ham sana oralig'i filtri qo'shildi
+        "shop__region",
+    )
     search_fields = ("shop__name", "order__receipt_number", "note")
     date_hierarchy = "created_at"
 

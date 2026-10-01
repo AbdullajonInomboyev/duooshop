@@ -68,7 +68,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_editable = ("order", "is_active")
     list_filter = ("is_active",)
     search_fields = ("name",)
-    prepopulated_fields = {"slug": ("name",)}
+    # prepopulated_fields = {"slug": ("name",)}
     ordering = ("order", "name")
 
     @admin.display(description="Asosiy kategoriya")
