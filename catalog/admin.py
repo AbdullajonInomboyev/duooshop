@@ -68,7 +68,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_editable = ("order", "is_active")
     list_filter = ("is_active",)
     search_fields = ("name",)
-    # prepopulated_fields = {"slug": ("name",)}
+    prepopulated_fields = {"slug": ("name",)}
     ordering = ("order", "name")
 
     @admin.display(description="Asosiy kategoriya")
@@ -116,7 +116,6 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("brand", "category")
     list_editable = ("price",)
     search_fields = ("name", "brand__name", "category__name")
-    prepopulated_fields = {"slug": ("name",)}
     autocomplete_fields = ("brand",)
     save_on_top = True
 

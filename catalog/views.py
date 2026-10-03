@@ -32,8 +32,10 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    """Mahsulotlar. ?brand= / ?category= filtrlari, pagination 20 tadan."""
+    """Mahsulotlar. ?brand= / ?category= filtrlari.
+    Pagination yo'q — brend/kategoriya ichidagi hamma mahsulot bir marta keladi."""
     permission_classes = [AllowAny]
+    pagination_class = None  # hamma mahsulot doim ko'rinadi (20 ta cheklov yo'q)
     filter_backends = [filters.SearchFilter]
     search_fields = ["name", "brand__name"]
 

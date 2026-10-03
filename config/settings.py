@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "corsheaders",
     "drf_spectacular",
+    "rangefilter",
 
     # Loyiha ilovalari
     "accounts",
@@ -41,7 +42,6 @@ INSTALLED_APPS = [
     "delivery",
     "promotions",
     "core",
-    "rangefilter",
 ]
 
 # ============================================================

@@ -16,6 +16,5 @@ gunicorn>=21.2.0
 python-decouple>=3.8
 django-jazzmin>=3.0.0
 djangorestframework-simplejwt>=5.3.1
-drf-spectacular
-openpyxl
-django-rangefilter
+openpyxl>=3.1.0
+django-rangefilter>=0.12.0

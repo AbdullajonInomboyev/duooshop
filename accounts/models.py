@@ -105,10 +105,10 @@ class Shop(models.Model):
         verbose_name=_("Tuman"),
     )
     latitude = models.DecimalField(
-        _("Kenglik"), max_digits=9, decimal_places=6, null=True, blank=True,
+        _("Kenglik"), max_digits=10, decimal_places=6, null=True, blank=True,
     )
     longitude = models.DecimalField(
-        _("Uzunlik"), max_digits=9, decimal_places=6, null=True, blank=True,
+        _("Uzunlik"), max_digits=10, decimal_places=6, null=True, blank=True,
     )
     address_text = models.CharField(_("Manzil (matn)"), max_length=255, blank=True)
 

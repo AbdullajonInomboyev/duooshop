@@ -40,10 +40,10 @@ class RegisterSerializer(serializers.Serializer):
     region_name = serializers.CharField(max_length=100)
     district_name = serializers.CharField(max_length=100)
     image = serializers.ImageField(required=False, allow_null=True)
-    latitude = serializers.DecimalField(max_digits=9, decimal_places=6,
-                                        required=False, allow_null=True)
-    longitude = serializers.DecimalField(max_digits=9, decimal_places=6,
-                                         required=False, allow_null=True)
+    # FloatField — GPS qancha xona bersa ham qabul qiladi (cheklov yo'q),
+    # create() da 6 xonaga yaxlitlanadi. Shunday xato bermaydi.
+    latitude = serializers.FloatField(required=False, allow_null=True)
+    longitude = serializers.FloatField(required=False, allow_null=True)
     address_text = serializers.CharField(required=False, allow_blank=True)
 
     def validate_phone(self, value):
@@ -66,14 +66,20 @@ class RegisterSerializer(serializers.Serializer):
             role=User.Role.SHOP,
             region=region,
         )
+        # Koordinatani 6 xonaga yaxlitlaymiz (GPS ko'p xona bersa ham)
+        lat = validated.get("latitude")
+        lng = validated.get("longitude")
+        lat = round(lat, 6) if lat is not None else None
+        lng = round(lng, 6) if lng is not None else None
+
         Shop.objects.create(
             owner=user,
             name=validated["shop_name"],
             image=validated.get("image"),
             region=region,
             district=district,
-            latitude=validated.get("latitude"),
-            longitude=validated.get("longitude"),
+            latitude=lat,
+            longitude=lng,
             address_text=validated.get("address_text", ""),
         )
         return user
