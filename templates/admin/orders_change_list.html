@@ -1,0 +1,32 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block content %}
+<div style="margin:12px 0; padding:14px 16px; background:#fff; border:1px solid #e0e0e0; border-radius:10px;">
+  <form method="get" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px;">
+    {% for k, v in request.GET.items %}
+      {% if k != 'dan' and k != 'gacha' and k != 'p' %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+      {% endif %}
+    {% endfor %}
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; color:#555; font-weight:600;">Sanadan</label>
+      <input type="date" name="dan" value="{{ dan }}"
+             style="padding:7px 10px; border:1px solid #ccc; border-radius:6px;">
+    </div>
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; color:#555; font-weight:600;">Sanagacha</label>
+      <input type="date" name="gacha" value="{{ gacha }}"
+             style="padding:7px 10px; border:1px solid #ccc; border-radius:6px;">
+    </div>
+    <button type="submit"
+            style="padding:8px 18px; background:#009D4D; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600;">
+      Filtrlash
+    </button>
+    {% if dan or gacha %}
+    <a href="{{ request.path }}" style="padding:8px 14px; color:#888; text-decoration:none; font-size:13px;">Tozalash</a>
+    {% endif %}
+  </form>
+</div>
+{{ block.super }}
+{% endblock %}

@@ -5,7 +5,8 @@ from .models import Banner, PromoScreen
 class BannerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banner
-        fields = ["id", "title", "image", "link_type", "link_value"]
+        fields = ["id", "title", "subtitle", "image", "bg_color",
+                  "link_type", "link_value"]
 
 
 class PromoScreenSerializer(serializers.ModelSerializer):

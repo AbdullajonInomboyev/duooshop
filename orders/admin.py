@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Sum
-from rangefilter.filters import DateRangeFilter
+from datetime import datetime
 from .models import Cart, CartItem, Order, OrderItem, Payment
 
 
@@ -37,12 +37,66 @@ class OrderAdmin(admin.ModelAdmin):
         "waybill_actions",
     )
     list_filter = (
-        ("created_at", DateRangeFilter),
         "status",
         "payment_type",
         "shop__region",
         "shop",
     )
+    # Sana oralig'i (dan-gacha) changelist tepasida ko'rsatiladi
+    change_list_template = "admin/orders_change_list.html"
+
+    def get_queryset(self, request):
+        """Sana oralig'i filtri: ?dan=YYYY-MM-DD&gacha=YYYY-MM-DD.
+        Mahalliy vaqt zonasi bilan to'g'ri ishlaydi."""
+        from datetime import timedelta, time
+        from django.utils import timezone as tz
+        qs = super().get_queryset(request)
+        dan = request.GET.get("dan")
+        gacha = request.GET.get("gacha")
+        cur_tz = tz.get_current_timezone()
+        if dan:
+            try:
+                d = datetime.strptime(dan, "%Y-%m-%d").date()
+                # Kun boshi (mahalliy) dan
+                start = tz.make_aware(datetime.combine(d, time.min), cur_tz)
+                qs = qs.filter(created_at__gte=start)
+            except (ValueError, TypeError):
+                pass
+        if gacha:
+            try:
+                g = datetime.strptime(gacha, "%Y-%m-%d").date()
+                # Kun oxiri (mahalliy): gacha + 1 kun boshigacha
+                end = tz.make_aware(
+                    datetime.combine(g + timedelta(days=1), time.min), cur_tz)
+                qs = qs.filter(created_at__lt=end)
+            except (ValueError, TypeError):
+                pass
+        return qs
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["dan"] = request.GET.get("dan", "")
+        extra_context["gacha"] = request.GET.get("gacha", "")
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def lookup_allowed(self, lookup, value, request=None):
+        if lookup in ("dan", "gacha"):
+            return True
+        return super().lookup_allowed(lookup, value, request)
+
+    def get_changelist(self, request, **kwargs):
+        """dan/gacha — maxsus parametrlar; Django ularni 'noma'lum' deb
+        hisoblab 302 qilmasligi uchun IGNORED_PARAMS ga qo'shamiz."""
+        from django.contrib.admin.views.main import ChangeList
+
+        class DuooChangeList(ChangeList):
+            def get_filters_params(self, params=None):
+                p = super().get_filters_params(params)
+                p.pop("dan", None)
+                p.pop("gacha", None)
+                return p
+
+        return DuooChangeList
     search_fields = (
         "receipt_number",
         "shop__name",
@@ -107,7 +161,8 @@ class OrderAdmin(admin.ModelAdmin):
     # ---- Formatlangan summa ----
     @admin.display(description="Jami summa", ordering="total")
     def total_display(self, obj):
-        return format_html("<b>{:,.0f}</b> so'm".format(obj.total).replace(",", " "))
+        son = "{:,.0f}".format(obj.total or 0).replace(",", " ")
+        return format_html("<b>{}</b> so'm", son)
 
     # ---- Yuk xati (HTML va Excel) tugmalari ----
     @admin.display(description="Hujjatlar")
@@ -219,7 +274,8 @@ class PaymentAdmin(admin.ModelAdmin):
 
     @admin.display(description="Summa", ordering="amount")
     def amount_display(self, obj):
-        return format_html("<b>{:,.0f}</b> so'm".format(obj.amount).replace(",", " "))
+        son = "{:,.0f}".format(obj.amount or 0).replace(",", " ")
+        return format_html("<b>{}</b> so'm", son)
 
 
 # ============================================================
@@ -239,4 +295,5 @@ class CartAdmin(admin.ModelAdmin):
 
     @admin.display(description="Savat summasi")
     def total_display(self, obj):
-        return format_html("<b>{:,.0f}</b> so'm".format(obj.total).replace(",", " "))
+        son = "{:,.0f}".format(obj.total or 0).replace(",", " ")
+        return format_html("<b>{}</b> so'm", son)

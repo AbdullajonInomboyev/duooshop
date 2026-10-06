@@ -75,58 +75,73 @@ def waybill_single(request, order_id):
     if request.GET.get("export") == "excel":
         wb = openpyxl.Workbook()
         ws = wb.active
-        order_num = getattr(order, "receipt_number", None) or getattr(order, "order_number", str(order.id))
-        ws.title = f"YukXati_{order_num}"
+        order_num = getattr(order, "receipt_number", None) or str(order.id)
+        ws.title = "Yuk xati"
         thin_border = _get_excel_border()
+        shop = order.shop
 
-        ws.merge_cells("A1:F1")
-        title_cell = ws["A1"]
-        title_cell.value = f"YUK XATI № {order_num}"
-        title_cell.font = Font(name="Arial", size=15, bold=True, color="FFFFFF")
-        title_cell.fill = PatternFill(start_color="1E7E34", fill_type="solid")
-        title_cell.alignment = Alignment(horizontal="center", vertical="center")
+        # Shapka — HTML bilan bir xil: korxona, manzil, telefon, sana, № (7 ustun)
+        ws.merge_cells("A1:G1")
+        tc = ws["A1"]
+        tc.value = f"YUK XATI № {order_num}"
+        tc.font = Font(name="Arial", size=15, bold=True, color="FFFFFF")
+        tc.fill = PatternFill(start_color="009D4D", fill_type="solid")
+        tc.alignment = Alignment(horizontal="center", vertical="center")
         ws.row_dimensions[1].height = 35
 
-        buyer = order.shop.name if order.shop else str(order.user)
-        phone = getattr(order.user, "phone", "-") if order.user else "-"
-        ws["A3"] = "Xaridor / Do'kon:"
-        ws["B3"] = buyer
-        ws["A4"] = "Telefon raqam:"
-        ws["B4"] = phone
-        ws["A5"] = "Sana:"
-        ws["B5"] = order.created_at.strftime("%d.%m.%Y %H:%M")
-
-        for r in range(3, 6):
+        district = shop.district.name if shop and shop.district else ""
+        addr = (shop.address_text if shop and shop.address_text else "")
+        full_addr = district + (", " + addr if addr else "")
+        phone = shop.owner.phone if shop and shop.owner else "-"
+        ws["A3"] = "Korxona nomi:"; ws["B3"] = shop.name if shop else "-"
+        ws["A4"] = "Adres:"; ws["B4"] = full_addr
+        ws["A5"] = "Telefoni:"; ws["B5"] = phone
+        ws["A6"] = "Sana:"; ws["B6"] = order.created_at.strftime("%d.%m.%Y %H:%M")
+        for r in range(3, 7):
             ws[f"A{r}"].font = Font(bold=True)
 
-        headers = ["№", "Mahsulot nomi", "O'lchov birligi", "Miqdori", "Narxi (so'm)", "Jami summa"]
-        ws.row_dimensions[7].height = 24
+        # Jadval sarlavhasi — HTML bilan bir xil (Kategoriya + Brend bor)
+        headers = ["№", "Kategoriya", "Brend", "Mahsulot nomi",
+                   "Narxi", "Miqdori", "Summasi"]
+        hdr_row = 8
+        ws.row_dimensions[hdr_row].height = 24
         for col_idx, h in enumerate(headers, 1):
-            c = ws.cell(row=7, column=col_idx, value=h)
+            c = ws.cell(row=hdr_row, column=col_idx, value=h)
             c.font = Font(bold=True, color="FFFFFF")
-            c.fill = PatternFill(start_color="28A745", fill_type="solid")
+            c.fill = PatternFill(start_color="009D4D", fill_type="solid")
             c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = thin_border
 
-        cur = 8
+        cur = hdr_row + 1
         for r in rows:
             ws.cell(row=cur, column=1, value=r["n"]).alignment = Alignment(horizontal="center")
-            ws.cell(row=cur, column=2, value=r["name"])
-            ws.cell(row=cur, column=3, value=r["unit"]).alignment = Alignment(horizontal="center")
-            ws.cell(row=cur, column=4, value=r["qty"]).alignment = Alignment(horizontal="right")
+            ws.cell(row=cur, column=2, value=r.get("category", "")).font = Font(bold=True)
+            ws.cell(row=cur, column=3, value=r.get("brand", ""))
+            ws.cell(row=cur, column=4, value=r["name"])
             ws.cell(row=cur, column=5, value=float(r["price"])).number_format = "#,##0"
-            ws.cell(row=cur, column=6, value=float(r["total"])).number_format = "#,##0"
-            for col_i in range(1, 7):
+            ws.cell(row=cur, column=6, value=r["qty"]).alignment = Alignment(horizontal="center")
+            ws.cell(row=cur, column=7, value=float(r["total"])).number_format = "#,##0"
+            for col_i in range(1, 8):
                 ws.cell(row=cur, column=col_i).border = thin_border
             cur += 1
 
-        ws.cell(row=cur, column=2, value="JAMI:").font = Font(bold=True)
-        tot_c = ws.cell(row=cur, column=6, value=f"=SUM(F8:F{cur-1})")
+        # JAMI qatori (sariq fon, HTML dagidek)
+        ws.merge_cells(start_row=cur, start_column=1, end_row=cur, end_column=6)
+        jami_c = ws.cell(row=cur, column=1, value="JAMI")
+        jami_c.font = Font(bold=True)
+        jami_c.alignment = Alignment(horizontal="right")
+        jami_c.fill = PatternFill(start_color="FFF44F", fill_type="solid")
+        tot_c = ws.cell(row=cur, column=7, value=f"=SUM(G{hdr_row+1}:G{cur-1})")
         tot_c.font = Font(bold=True)
         tot_c.number_format = "#,##0"
+        tot_c.fill = PatternFill(start_color="FFF44F", fill_type="solid")
+        for col_i in range(1, 8):
+            ws.cell(row=cur, column=col_i).border = thin_border
 
-        for col in ws.columns:
-            max_len = max(len(str(c.value or "")) for c in col)
-            ws.column_dimensions[get_column_letter(col[0].column)].width = max(max_len + 4, 12)
+        # Ustun kengliklari
+        widths = [6, 18, 16, 32, 12, 10, 14]
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
 
         resp = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         resp["Content-Disposition"] = f'attachment; filename="nakladnoy_{order_num}.xlsx"'

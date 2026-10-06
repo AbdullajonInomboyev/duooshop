@@ -62,8 +62,11 @@ class CreateOrderSerializer(serializers.Serializer):
     Savatdan buyurtma yaratadi. Narxlarni nusxa qiladi, qoldiqni kamaytiradi,
     chek raqami avtomatik beriladi. Hammasi bitta tranzaksiyada.
     """
+    # Ilovadan buyurtma berishda faqat naqd pul (nasiya olib tashlandi).
+    # Model'da CREDIT qoladi — admin eski nasiya buyurtmalarni ko'radi.
     payment_type = serializers.ChoiceField(
-        choices=Order.PaymentType.choices, default=Order.PaymentType.CASH,
+        choices=[(Order.PaymentType.CASH, "Naqd pul")],
+        default=Order.PaymentType.CASH,
     )
     comment = serializers.CharField(required=False, allow_blank=True)
 

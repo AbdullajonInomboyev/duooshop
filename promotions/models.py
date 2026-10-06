@@ -11,9 +11,22 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Banner(models.Model):
-    """Bosh sahifadagi aylanuvchi bannerlar."""
+    """Bosh sahifadagi aylanuvchi bannerlar.
+    Rasm BILAN yoki rasmSIZ (faqat matn) bo'lishi mumkin.
+    Rasm bo'lmasa — sarlavha + tavsif matn, fon rangi bilan ko'rsatiladi."""
     title = models.CharField(_("Sarlavha"), max_length=200, blank=True)
-    image = models.ImageField(_("Rasm"), upload_to="banners/")
+    subtitle = models.CharField(
+        _("Tavsif (matn banner uchun)"), max_length=300, blank=True,
+        help_text=_("Rasm bo'lmaganda ko'rinadigan qo'shimcha matn."),
+    )
+    image = models.ImageField(
+        _("Rasm"), upload_to="banners/", null=True, blank=True,
+        help_text=_("Ixtiyoriy. Bo'sh qoldirilsa, matn banner ko'rsatiladi."),
+    )
+    bg_color = models.CharField(
+        _("Fon rangi (matn banner)"), max_length=7, blank=True, default="#009D4D",
+        help_text=_("Rasm bo'lmaganda fon rangi. Masalan: #009D4D"),
+    )
     # Bosilganda qayerga o'tsin (ixtiyoriy: brend yoki mahsulot).
     link_type = models.CharField(
         _("Havola turi"), max_length=20, blank=True,
